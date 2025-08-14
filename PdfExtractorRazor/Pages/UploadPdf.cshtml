@@ -1,0 +1,33 @@
+@page
+@model PdfExtractorRazor.Pages.UploadPdfModel
+@{
+	ViewData["Title"] = "Upload PDF";
+}
+
+<h2>Upload a PDF to extract text</h2>
+
+<form method="post" enctype="multipart/form-data">
+	<div>
+		<label asp-for="Pdf">Choose PDF</label>
+		<input asp-for="Pdf" type="file" accept="application/pdf,.pdf" />
+		<span asp-validation-for="Pdf" class="text-danger"></span>
+	</div>
+	<div style="margin-top: 10px;">
+		<button type="submit">Extract</button>
+	</div>
+</form>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+	<div class="text-danger">@Model.ErrorMessage</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.ExtractedText))
+{
+	<h3>Extracted text</h3>
+	<pre style="white-space: pre-wrap;">@Model.ExtractedText</pre>
+}
+
+@section Scripts {
+	<partial name="_ValidationScriptsPartial" />
+}
