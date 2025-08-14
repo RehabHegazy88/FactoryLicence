@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>JSON Upload & Reader</title>
+	<style>
+		:root {
+			--bg: #0b0f14;
+			--panel: #121821;
+			--text: #e6edf3;
+			--muted: #9aa7b2;
+			--accent: #3b82f6;
+			--accent-2: #22c55e;
+			--danger: #ef4444;
+			--border: #1f2a37;
+			--mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+		}
+		* { box-sizing: border-box; }
+		html, body { height: 100%; }
+		body {
+			margin: 0;
+			background: linear-gradient(180deg, #0b0f14 0%, #0d1218 100%);
+			color: var(--text);
+			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+			line-height: 1.5;
+			padding: 24px;
+		}
+		h1 {
+			margin: 0 0 8px 0;
+			font-size: 22px;
+			font-weight: 600;
+		}
+		p.sub {
+			margin: 0 0 20px 0;
+			color: var(--muted);
+		}
+		.container {
+			max-width: 980px;
+			margin: 0 auto;
+		}
+		.panel {
+			background: var(--panel);
+			border: 1px solid var(--border);
+			border-radius: 12px;
+			padding: 16px;
+		}
+		.grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 16px;
+		}
+		@media (max-width: 960px) {
+			.grid { grid-template-columns: 1fr; }
+		}
+		.label { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+		input[type="file"] {
+			background: #0f1622;
+			color: var(--text);
+			border: 1px dashed var(--border);
+			padding: 10px;
+			border-radius: 10px;
+			width: 100%;
+		}
+		.drop {
+			border: 2px dashed var(--border);
+			border-radius: 12px;
+			padding: 18px;
+			text-align: center;
+			color: var(--muted);
+		}
+		.drop.dragover {
+			border-color: var(--accent);
+			background: rgba(59,130,246,0.08);
+			color: var(--text);
+		}
+		.status {
+			margin-top: 12px;
+			font-size: 13px;
+			color: var(--muted);
+		}
+		.status.ok { color: var(--accent-2); }
+		.status.err { color: var(--danger); }
+		pre {
+			margin: 0;
+			max-height: 520px;
+			overflow: auto;
+			background: #0a0f16;
+			border: 1px solid var(--border);
+			border-radius: 10px;
+			padding: 12px;
+			font-family: var(--mono);
+			font-size: 12px;
+		}
+		.controls { display: flex; gap: 8px; align-items: center; }
+		input[type="text"] {
+			flex: 1;
+			background: #0f1622;
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			color: var(--text);
+			padding: 10px 12px;
+			font-size: 14px;
+		}
+		button {
+			background: var(--accent);
+			border: 1px solid #245bdb;
+			color: white;
+			border-radius: 8px;
+			padding: 10px 14px;
+			font-weight: 600;
+			cursor: pointer;
+		}
+		button.secondary {
+			background: transparent;
+			border-color: var(--border);
+			color: var(--text);
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Upload a JSON file and read values</h1>
+		<p class="sub">Select or drop a .json file below. The file is parsed locally in your browser; nothing is uploaded to a server.</p>
+
+		<div class="grid">
+			<div class="panel">
+				<div class="label">Choose file</div>
+				<input id="jsonFile" type="file" accept=".json,application/json" />
+				<div id="dropZone" class="drop" style="margin-top: 12px;">Drop JSON file here</div>
+				<div id="status" class="status">No file loaded</div>
+			</div>
+
+			<div class="panel">
+				<div class="label">Read a value (dot or bracket path)</div>
+				<div class="controls" style="margin-bottom: 10px;">
+					<input id="pathInput" type="text" placeholder="e.g. users[0].name or settings.theme" />
+					<button id="getValueBtn">Get value</button>
+					<button id="copyBtn" class="secondary" title="Copy result to clipboard">Copy</button>
+				</div>
+				<pre id="valueOutput" aria-live="polite"></pre>
+			</div>
+		</div>
+
+		<div class="panel" style="margin-top: 16px;">
+			<div class="label">Preview</div>
+			<pre id="jsonPreview"></pre>
+		</div>
+	</div>
+
+	<script>
+		(function () {
+			const fileInput = document.getElementById('jsonFile');
+			const dropZone = document.getElementById('dropZone');
+			const statusEl = document.getElementById('status');
+			const previewEl = document.getElementById('jsonPreview');
+			const pathInput = document.getElementById('pathInput');
+			const getValueBtn = document.getElementById('getValueBtn');
+			const valueOutput = document.getElementById('valueOutput');
+			const copyBtn = document.getElementById('copyBtn');
+
+			let parsedData = null;
+
+			function setStatus(message, kind) {
+				statusEl.textContent = message;
+				statusEl.classList.remove('ok', 'err');
+				if (kind) statusEl.classList.add(kind);
+			}
+
+			function isLikelyJson(file) {
+				return file && (file.type === 'application/json' || file.name.toLowerCase().endsWith('.json'));
+			}
+
+			async function handleFile(file) {
+				if (!file) return;
+
+				if (!isLikelyJson(file)) {
+					setStatus('Warning: file does not look like JSON; attempting to parse anyway…', 'err');
+				} else {
+					setStatus(`Loading \"${file.name}\" (${(file.size / 1024).toFixed(1)} KB)…`);
+				}
+
+				try {
+					const text = await file.text();
+					try {
+						parsedData = JSON.parse(text);
+						previewEl.textContent = JSON.stringify(parsedData, null, 2);
+						setStatus(`Loaded ${file.name} successfully`, 'ok');
+						valueOutput.textContent = '';
+					} catch (parseError) {
+						parsedData = null;
+						previewEl.textContent = '';
+						setStatus('Invalid JSON: ' + parseError.message, 'err');
+					}
+				} catch (readError) {
+					parsedData = null;
+					previewEl.textContent = '';
+					setStatus('Failed to read file: ' + readError.message, 'err');
+				}
+			}
+
+			function normalizePath(path) {
+				return path
+					.replace(/\[(\d+)\]/g, '.$1')
+					.replace(/\[\"([^\]]+)\"\]/g, '.$1')
+					.replace(/\[\'([^\]]+)\'\]/g, '.$1');
+			}
+
+			function getByPath(object, path) {
+				if (!path || path.trim() === '') return object;
+				const safePath = normalizePath(path);
+				const segments = safePath.split('.').filter(Boolean);
+				let current = object;
+				for (const key of segments) {
+					if (current == null) return undefined;
+					if (Object.prototype.hasOwnProperty.call(current, key)) {
+						current = current[key];
+					} else {
+						return undefined;
+					}
+				}
+				return current;
+			}
+
+			function showValue(value) {
+				if (value === undefined) {
+					valueOutput.textContent = 'Not found';
+					return;
+				}
+				if (typeof value === 'object') {
+					valueOutput.textContent = JSON.stringify(value, null, 2);
+				} else {
+					valueOutput.textContent = String(value);
+				}
+			}
+
+			fileInput.addEventListener('change', (e) => {
+				const file = e.target.files && e.target.files[0];
+				handleFile(file);
+			});
+
+			dropZone.addEventListener('dragover', (e) => {
+				e.preventDefault();
+				dropZone.classList.add('dragover');
+			});
+			dropZone.addEventListener('dragleave', () => {
+				dropZone.classList.remove('dragover');
+			});
+			dropZone.addEventListener('drop', (e) => {
+				e.preventDefault();
+				dropZone.classList.remove('dragover');
+				const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+				handleFile(file);
+			});
+
+			getValueBtn.addEventListener('click', () => {
+				if (!parsedData) {
+					valueOutput.textContent = 'Load a JSON file first';
+					return;
+				}
+				const path = pathInput.value.trim();
+				const value = getByPath(parsedData, path);
+				showValue(value);
+			});
+
+			copyBtn.addEventListener('click', async () => {
+				const text = valueOutput.textContent || '';
+				if (!text) return;
+				try {
+					await navigator.clipboard.writeText(text);
+					copyBtn.textContent = 'Copied';
+					setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1000);
+				} catch (_) {
+					/* ignore */
+				}
+			});
+		})();
+	</script>
+</body>
+</html>
