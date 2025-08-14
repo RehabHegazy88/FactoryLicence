@@ -44,10 +44,10 @@ public class UploadPdfModel : PageModel
 		{
 			await using var memory = new MemoryStream();
 			await Pdf.CopyToAsync(memory);
-			var bytes = memory.ToArray();
+			memory.Position = 0;
 
 			var builder = new StringBuilder();
-			using (var document = PdfDocument.Open(bytes))
+			using (var document = PdfDocument.Open(memory))
 			{
 				foreach (var page in document.GetPages())
 				{
