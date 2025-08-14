@@ -156,9 +156,13 @@
         </div>
 
         <div class="button-group">
-            <button onclick="processData()">Load & Process Data</button>
+            <button onclick="loadFromJson()">Load from JSON</button>
+            <label style="display:inline-block;">
+                <input id="jsonFileInput" type="file" accept=".json,application/json" style="display:none" onchange="importJsonFile(event)"/>
+                <button type="button" onclick="document.getElementById('jsonFileInput').click()">Import JSON</button>
+            </label>
+            <button onclick="downloadJson()">Download JSON</button>
             <button onclick="exportToExcel()">Export to Excel</button>
-            <button onclick="updateExistingFile()">Update Existing Excel</button>
         </div>
 
         <div class="table-container">
@@ -188,814 +192,22 @@
     <script>
         let allData = [];
         let filteredData = [];
+        let certificatesData = [];
 
-        // Certificate data extracted from PDFs
-        const certificatesData = [
-            // Document 2 - PHO-CC-56496
-            {
-                certificateNo: "PHO-CC-56496",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "88011UV7",
-                manufacturer: "WIKA",
-                modelNo: "N/A",
-                range: "0.2 mpa",
-                units: "mpa",
-                accuracyGrade: "2A 4\"",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.00,
-                acceptanceCriteria: "+/-0.5% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 3 - PHO-CC-56497
-            {
-                certificateNo: "PHO-CC-56497",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "8800 ONJ6",
-                manufacturer: "WIKA",
-                modelNo: "N/A",
-                range: "0-5800 psi",
-                units: "psi",
-                accuracyGrade: "2A 4\"",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 7.00,
-                acceptanceCriteria: "+/-0.5% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 4 - PHO-CC-56498
-            {
-                certificateNo: "PHO-CC-56498",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "150588003WRF",
-                manufacturer: "WIKA",
-                modelNo: "N/A",
-                range: "0-230 psi",
-                units: "psi",
-                accuracyGrade: "2A 4\"",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.00,
-                acceptanceCriteria: "+/-0.5% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 5 - PHO-CC-56499
-            {
-                certificateNo: "PHO-CC-56499",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "88016ZGF",
-                manufacturer: "WIKA",
-                modelNo: "N/A",
-                range: "0.2 mpa",
-                units: "mpa",
-                accuracyGrade: "2A 4\"",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.00,
-                acceptanceCriteria: "+/-0.5% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 6 - PHO-CC-56500
-            {
-                certificateNo: "PHO-CC-56500",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "231129981",
-                manufacturer: "PA",
-                modelNo: "2009F464-33",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.01,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 7 - PHO-CC-56501
-            {
-                certificateNo: "PHO-CC-56501",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "231056876",
-                manufacturer: "PA",
-                modelNo: "2009F464-33",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 8 - PHO-CC-56502
-            {
-                certificateNo: "PHO-CC-56502",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "231129519",
-                manufacturer: "PA",
-                modelNo: "2009F464-33",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.02,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 9 - PHO-CC-56503
-            {
-                certificateNo: "PHO-CC-56503",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "018301095",
-                manufacturer: "MC",
-                modelNo: "N/A",
-                range: "0-25 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.04,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 10 - PHO-CC-56504
-            {
-                certificateNo: "PHO-CC-56504",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "103-PG-003",
-                manufacturer: "PA",
-                modelNo: "2009F464-33",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 11 - PHO-CC-56505
-            {
-                certificateNo: "PHO-CC-56505",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "15056295",
-                manufacturer: "MC",
-                modelNo: "02000328",
-                range: "0-6000 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 2.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 12 - PHO-CC-56506
-            {
-                certificateNo: "PHO-CC-56506",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "22114905",
-                manufacturer: "MC",
-                modelNo: "02000328",
-                range: "0-25 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.03,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 13 - PHO-CC-56507
-            {
-                certificateNo: "PHO-CC-56507",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "15084764",
-                manufacturer: "MC",
-                modelNo: "02000328",
-                range: "0-230 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 2.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 14 - PHO-CC-56508
-            {
-                certificateNo: "PHO-CC-56508",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "15084763",
-                manufacturer: "MC",
-                modelNo: "02000328",
-                range: "0-230 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 1.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 15 - PHO-CC-56509
-            {
-                certificateNo: "PHO-CC-56509",
-                equipmentType: "PRESSURE RELIEF VALVE",
-                serialNo: "70096-9",
-                manufacturer: "AQUATROL INC",
-                modelNo: "88E2A1M1K1",
-                range: "150 psi",
-                units: "psi",
-                accuracyGrade: "N/A",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 1.5,
-                acceptanceCriteria: "+/-1% of SP",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 16 - PHO-CC-56510
-            {
-                certificateNo: "PHO-CC-56510",
-                equipmentType: "PRESSURE RELIEF VALVE",
-                serialNo: "70096-10",
-                manufacturer: "AQUATROL INC",
-                modelNo: "88E2A1M1K1",
-                range: "150 psi",
-                units: "psi",
-                accuracyGrade: "N/A",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 1.5,
-                acceptanceCriteria: "+/-1% of SP",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 20 - PHO-CC-56511
-            {
-                certificateNo: "PHO-CC-56511",
-                equipmentType: "PRESSURE RELIEF VALVE",
-                serialNo: "70096-8",
-                manufacturer: "AQUATROL INC",
-                modelNo: "88E2A1M1K1",
-                range: "150 psi",
-                units: "psi",
-                accuracyGrade: "N/A",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 1.5,
-                acceptanceCriteria: "+/-1% of SP",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 21 - PHO-CC-56512
-            {
-                certificateNo: "PHO-CC-56512",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "220147764",
-                manufacturer: "PA",
-                modelNo: "2009F464-33",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 22 - PHO-CC-56513
-            {
-                certificateNo: "PHO-CC-56513",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "200718537",
-                manufacturer: "MC",
-                modelNo: "1281012",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.03,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 23 - PHO-CC-56514
-            {
-                certificateNo: "PHO-CC-56514",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "200718534",
-                manufacturer: "MC",
-                modelNo: "1281012",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.02,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 24 - PHO-CC-56515
-            {
-                certificateNo: "PHO-CC-56515",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "200718531",
-                manufacturer: "MC",
-                modelNo: "1281012",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 25 - PHO-CC-56516
-            {
-                certificateNo: "PHO-CC-56516",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "200718540",
-                manufacturer: "MC",
-                modelNo: "1281012",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 26 - PHO-CC-56517
-            {
-                certificateNo: "PHO-CC-56517",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "200718590",
-                manufacturer: "MC",
-                modelNo: "1281012",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.02,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 27 - PHO-CC-56518
-            {
-                certificateNo: "PHO-CC-56518",
-                equipmentType: "TORQUE GAUGE",
-                serialNo: "RG0481",
-                manufacturer: "RANGER",
-                modelNo: "107-808T",
-                range: "0-2200 psi (75 ftlb)",
-                units: "psi/ftlb",
-                accuracyGrade: "3A 6\"",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.00,
-                acceptanceCriteria: "+/-0.25% of FS",
-                location: "ST-80",
-                status: "PASS"
-            },
-            // Document 28 - PHO-CC-56519
-            {
-                certificateNo: "PHO-CC-56519",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "22024318",
-                manufacturer: "MC",
-                modelNo: "02000328",
-                range: "0-6000 psi",
-                units: "psi",
-                accuracyGrade: "2A 4\"",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 2.00,
-                acceptanceCriteria: "+/-0.5% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 29 - PHO-CC-56520
-            {
-                certificateNo: "PHO-CC-56520",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "210519508",
-                manufacturer: "PA",
-                modelNo: "2009F464-33",
-                range: "0-5800 psi",
-                units: "psi",
-                accuracyGrade: "2A 4\"",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 6.00,
-                acceptanceCriteria: "+/-0.5% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 30 - PHO-CC-56521
-            {
-                certificateNo: "PHO-CC-56521",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "220147470",
-                manufacturer: "PA",
-                modelNo: "2009F464-33",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 0.03,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 31 - PHO-CC-56522
-            {
-                certificateNo: "PHO-CC-56522",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "EK22009372831",
-                manufacturer: "CALCON",
-                modelNo: "EN 837-1",
-                range: "0-300 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 2.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 32 - PHO-CC-56523
-            {
-                certificateNo: "PHO-CC-56523",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "EK22009372877",
-                manufacturer: "CALCON",
-                modelNo: "EN 837-1",
-                range: "0-300 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "12-01-2025",
-                nextCalDate: "11-01-2026",
-                maxDeviation: 1.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "STORE",
-                status: "PASS"
-            },
-            // Document 46 - PHO-CC-56445
-            {
-                certificateNo: "PHO-CC-56445",
-                equipmentType: "TORQUE GAUGE",
-                serialNo: "220986",
-                manufacturer: "NOV",
-                modelNo: "N/A",
-                range: "0-2200 psi (75 ftlb)",
-                units: "psi/ftlb",
-                accuracyGrade: "3A 6\"",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 0.00,
-                acceptanceCriteria: "+/-0.25% of FS",
-                location: "ST-80",
-                status: "PASS"
-            },
-            // Document 47-50 - PHO-CC-56446 to 56449
-            {
-                certificateNo: "PHO-CC-56446",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "1404378",
-                manufacturer: "MC",
-                modelNo: "314",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 0.02,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "BRAKE HPU, PUMP WORK PRESSURE (RIG FLOOR)",
-                status: "PASS"
-            },
-            {
-                certificateNo: "PHO-CC-56447",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "1404372",
-                manufacturer: "MC",
-                modelNo: "314",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 0.01,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "BRAKE HPU, LEFT WORKING CLAM PS PRE. (RIG FLOOR)",
-                status: "PASS"
-            },
-            {
-                certificateNo: "PHO-CC-56448",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "1404361",
-                manufacturer: "MC",
-                modelNo: "314",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 0.03,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "BRAKE HPU, RIGHT WORKING CLAM PS PRE. (RIG FLOOR)",
-                status: "PASS"
-            },
-            {
-                certificateNo: "PHO-CC-56449",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "1404364",
-                manufacturer: "MC",
-                modelNo: "314",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 0.01,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "BRAKE HPU, SAFETY CLAMS PRE. (RIG FLOOR)",
-                status: "PASS"
-            },
-            // Document 50-51 - PHO-CC-56450
-            {
-                certificateNo: "PHO-CC-56450",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "14011493Q",
-                manufacturer: "MC",
-                modelNo: "314",
-                range: "0-16 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 0.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "BRAKE HPU, CIRCULATION PUMP PRE. (RIG FLOOR)",
-                status: "PASS"
-            },
-            // Document 52-56 - PHO-CC-56451 to 56455
-            {
-                certificateNo: "PHO-CC-56451",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "103-PG-25",
-                manufacturer: "WOM",
-                modelNo: "N/A",
-                range: "0-6000 psi",
-                units: "psi",
-                accuracyGrade: "3A 6\"",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 7.00,
-                acceptanceCriteria: "+/-0.25% of FS",
-                location: "CHOKE PANEL, RIG FLOOR",
-                status: "PASS"
-            },
-            {
-                certificateNo: "PHO-CC-56452",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "103-PG-26",
-                manufacturer: "WOM",
-                modelNo: "N/A",
-                range: "0-6000 psi",
-                units: "psi",
-                accuracyGrade: "3A 6\"",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 9.00,
-                acceptanceCriteria: "+/-0.25% of FS",
-                location: "CHOKE PANEL, RIG FLOOR",
-                status: "PASS"
-            },
-            {
-                certificateNo: "PHO-CC-56453",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "103-PG-27",
-                manufacturer: "WOM",
-                modelNo: "N/A",
-                range: "0-300 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 2.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "CHOKE PANEL, RIG FLOOR",
-                status: "PASS"
-            },
-            {
-                certificateNo: "PHO-CC-56454",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "103-PG-28",
-                manufacturer: "WOM",
-                modelNo: "N/A",
-                range: "0-600 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 3.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "CHOKE PANEL, RIG FLOOR",
-                status: "PASS"
-            },
-            {
-                certificateNo: "PHO-CC-56455",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "103-PG-29",
-                manufacturer: "STEWRTS",
-                modelNo: "N/A",
-                range: "0-600 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 2.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "CHOKE PANEL, RIG FLOOR",
-                status: "PASS"
-            },
-            // Document 57-59 - PHO-CC-56456 to 56458
-            {
-                certificateNo: "PHO-CC-56456",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "103-PG-85",
-                manufacturer: "SMC",
-                modelNo: "N/A",
-                range: "0-160 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 1.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "CHOKE PANEL, RIG FLOOR",
-                status: "PASS"
-            },
-            {
-                certificateNo: "PHO-CC-56457",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "103-PG-87",
-                manufacturer: "SMC",
-                modelNo: "N/A",
-                range: "0-160 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 1.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "CHOKE PANEL, RIG FLOOR",
-                status: "PASS"
-            },
-            {
-                certificateNo: "PHO-CC-56458",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "103-PG-009",
-                manufacturer: "INGERSOLLRANA",
-                modelNo: "N/A",
-                range: "0-160 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 0.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "MAN RIDER , RIG FLOOR",
-                status: "PASS"
-            },
-            // Document 60 - PHO-CC-56459
-            {
-                certificateNo: "PHO-CC-56459",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "63108",
-                manufacturer: "OTECO INC",
-                modelNo: "6",
-                range: "0-6000 psi",
-                units: "psi",
-                accuracyGrade: "2A 4\"",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 6.00,
-                acceptanceCriteria: "+/-0.5% of FS",
-                location: "PIPE STAND, RIG FLOOR",
-                status: "PASS"
-            },
-            // Document 61-62 - PHO-CC-56460 to 56461
-            {
-                certificateNo: "PHO-CC-56460",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "103-PG-91",
-                manufacturer: "MC",
-                modelNo: "2000328",
-                range: "0-25 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 0.02,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "HPU-SYSTEM PRESSURE, RIG FLOOR",
-                status: "PASS"
-            },
-            {
-                certificateNo: "PHO-CC-56461",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "103-PG-90",
-                manufacturer: "MC",
-                modelNo: "314",
-                range: "0-4 mpa",
-                units: "mpa",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 0.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "HPU-OIL FILL PUMP WORK PRESSURE, RIG FLOOR",
-                status: "PASS"
-            },
-            // Document 63-65 - PHO-CC-56462 to 56464
-            {
-                certificateNo: "PHO-CC-56462",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "103-PG-10",
-                manufacturer: "WIKA",
-                modelNo: "EN 837-1",
-                range: "0-200 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 1.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "MAN RIDER , RIG FLOOR",
-                status: "PASS"
-            },
-            {
-                certificateNo: "PHO-CC-56463",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "E140116103",
-                manufacturer: "CALCON",
-                modelNo: "N/A",
-                range: "0-3000 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 3.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "ST-80",
-                status: "PASS"
-            },
-            {
-                certificateNo: "PHO-CC-56464",
-                equipmentType: "PRESSURE GAUGE",
-                serialNo: "103-PG-202",
-                manufacturer: "WIKA",
-                modelNo: "EN 837-1",
-                range: "0-200 psi",
-                units: "psi",
-                accuracyGrade: "1A (2 ½\")",
-                calibrationDate: "11-01-2025",
-                nextCalDate: "10-01-2026",
-                maxDeviation: 1.00,
-                acceptanceCriteria: "+/-1% of FS",
-                location: "DRAW BOX , DRILLER CABIN",
-                status: "PASS"
+        async function loadFromJson() {
+            try {
+                const res = await fetch('licences.json', { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                certificatesData = await res.json();
+                processData();
+                console.log('Loaded licences.json:', certificatesData.length);
+            } catch (error) {
+                console.error('Failed to load licences.json:', error);
+                alert('Could not load licences.json. You can import a JSON file instead.');
+                certificatesData = [];
+                processData();
             }
-        ];
+        }
 
         function processData() {
             allData = certificatesData;
@@ -1003,7 +215,32 @@
             updateTable();
             updateStats();
             populateFilters();
-            console.log('Data loaded:', allData.length + ' certificates');
+        }
+
+        function importJsonFile(e) {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            file.text().then(text => {
+                try {
+                    certificatesData = JSON.parse(text);
+                    processData();
+                } catch (err) {
+                    alert('Invalid JSON: ' + err.message);
+                }
+                e.target.value = '';
+            });
+        }
+
+        function downloadJson() {
+            const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'licences.json';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
         }
 
         function updateTable() {
@@ -1013,19 +250,19 @@
             filteredData.forEach(cert => {
                 const row = tableBody.insertRow();
                 row.innerHTML = `
-                    <td>${cert.certificateNo}</td>
-                    <td>${cert.equipmentType}</td>
-                    <td>${cert.serialNo}</td>
-                    <td>${cert.manufacturer}</td>
-                    <td>${cert.modelNo}</td>
-                    <td>${cert.range}</td>
-                    <td>${cert.units}</td>
-                    <td>${cert.accuracyGrade}</td>
-                    <td>${cert.calibrationDate}</td>
-                    <td>${cert.nextCalDate}</td>
-                    <td>${cert.maxDeviation}</td>
-                    <td class="${cert.status === 'PASS' ? 'pass' : 'fail'}">${cert.status}</td>
-                    <td>${cert.location}</td>
+                    <td>${cert.certificateNo ?? ''}</td>
+                    <td>${cert.equipmentType ?? ''}</td>
+                    <td>${cert.serialNo ?? ''}</td>
+                    <td>${cert.manufacturer ?? ''}</td>
+                    <td>${cert.modelNo ?? ''}</td>
+                    <td>${cert.range ?? ''}</td>
+                    <td>${cert.units ?? ''}</td>
+                    <td>${cert.accuracyGrade ?? ''}</td>
+                    <td>${cert.calibrationDate ?? ''}</td>
+                    <td>${cert.nextCalDate ?? ''}</td>
+                    <td>${cert.maxDeviation ?? ''}</td>
+                    <td class="${cert.status === 'PASS' ? 'pass' : 'fail'}">${cert.status ?? ''}</td>
+                    <td>${cert.location ?? ''}</td>
                 `;
             });
         }
@@ -1053,78 +290,6 @@
             });
         }
 
-        function exportToExcel() {
-            const ws = XLSX.utils.json_to_sheet(allData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Calibration Certificates");
-
-            // Add a summary sheet
-            const summary = [
-                ["Summary Report"],
-                [""],
-                ["Total Certificates", allData.length],
-                ["Pressure Gauges", allData.filter(c => c.equipmentType === 'PRESSURE GAUGE').length],
-                ["Relief Valves", allData.filter(c => c.equipmentType === 'PRESSURE RELIEF VALVE').length],
-                ["Pass Rate", Math.round((allData.filter(c => c.status === 'PASS').length / allData.length) * 100) + "%"],
-                [""],
-                ["Calibration Period", "12-01-2025 to 11-01-2026"],
-                ["Customer", "ABRAJ ENERGY SERVICES"],
-                ["Project", "591-1921"]
-            ];
-            const ws2 = XLSX.utils.aoa_to_sheet(summary);
-            XLSX.utils.book_append_sheet(wb, ws2, "Summary");
-
-            XLSX.writeFile(wb, "Calibration_Certificates_Complete.xlsx");
-        }
-
-        async function updateExistingFile() {
-            try {
-                // Read the existing file
-                const fileData = await window.fs.readFile('rar1.xlsx');
-                const workbook = XLSX.read(fileData, {type: 'array'});
-                
-                // Create or update the Calibration sheet
-                const ws = XLSX.utils.json_to_sheet(allData);
-                
-                // Check if Calibration sheet exists, if yes, replace it
-                if (workbook.SheetNames.includes("Calibration")) {
-                    workbook.Sheets["Calibration"] = ws;
-                } else {
-                    XLSX.utils.book_append_sheet(workbook, ws, "Calibration");
-                }
-                
-                // Add/Update summary sheet
-                const summary = [
-                    ["Calibration Summary Report"],
-                    [""],
-                    ["Total Certificates", allData.length],
-                    ["Pressure Gauges", allData.filter(c => c.equipmentType === 'PRESSURE GAUGE').length],
-                    ["Relief Valves", allData.filter(c => c.equipmentType === 'PRESSURE RELIEF VALVE').length],
-                    ["Pass Rate", Math.round((allData.filter(c => c.status === 'PASS').length / allData.length) * 100) + "%"],
-                    [""],
-                    ["Calibration Period", "12-01-2025 to 11-01-2026"],
-                    ["Customer", "ABRAJ ENERGY SERVICES"],
-                    ["Project", "591-1921"],
-                    ["Updated", new Date().toLocaleString()]
-                ];
-                const ws2 = XLSX.utils.aoa_to_sheet(summary);
-                
-                if (workbook.SheetNames.includes("Summary")) {
-                    workbook.Sheets["Summary"] = ws2;
-                } else {
-                    XLSX.utils.book_append_sheet(workbook, ws2, "Summary");
-                }
-                
-                // Export the updated workbook
-                XLSX.writeFile(workbook, "rar1_updated.xlsx");
-                alert("File updated successfully! Downloaded as 'rar1_updated.xlsx'");
-            } catch (error) {
-                alert("Error updating file: " + error.message);
-                console.error(error);
-            }
-        }
-
-        // Filter functionality
         document.getElementById('searchInput').addEventListener('input', filterData);
         document.getElementById('typeFilter').addEventListener('change', filterData);
         document.getElementById('manufacturerFilter').addEventListener('change', filterData);
@@ -1148,8 +313,31 @@
             updateTable();
         }
 
-        // Auto-load data on page load - execute immediately
-        processData();
+        // Auto-load
+        loadFromJson();
+
+        function exportToExcel() {
+            const ws = XLSX.utils.json_to_sheet(allData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Calibration Certificates");
+
+            const summary = [
+                ["Summary Report"],
+                [""],
+                ["Total Certificates", allData.length],
+                ["Pressure Gauges", allData.filter(c => c.equipmentType === 'PRESSURE GAUGE').length],
+                ["Relief Valves", allData.filter(c => c.equipmentType === 'PRESSURE RELIEF VALVE').length],
+                ["Pass Rate", Math.round((allData.filter(c => c.status === 'PASS').length / allData.length) * 100) + "%"],
+                [""],
+                ["Calibration Period", "12-01-2025 to 11-01-2026"],
+                ["Customer", "ABRAJ ENERGY SERVICES"],
+                ["Project", "591-1921"]
+            ];
+            const ws2 = XLSX.utils.aoa_to_sheet(summary);
+            XLSX.utils.book_append_sheet(wb, ws2, "Summary");
+
+            XLSX.writeFile(wb, "Calibration_Certificates_Complete.xlsx");
+        }
     </script>
 </body>
 </html>
