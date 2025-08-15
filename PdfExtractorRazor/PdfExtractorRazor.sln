@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35825.156 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdfExtractorRazor", "PdfExtractorRazor.csproj", "{D681D9AB-C70F-2F1D-0D7D-8D4911EAABFA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D681D9AB-C70F-2F1D-0D7D-8D4911EAABFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D681D9AB-C70F-2F1D-0D7D-8D4911EAABFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D681D9AB-C70F-2F1D-0D7D-8D4911EAABFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D681D9AB-C70F-2F1D-0D7D-8D4911EAABFA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4E906255-A94B-4917-952C-EB60FE4ABC99}
+	EndGlobalSection
+EndGlobal
