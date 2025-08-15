@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "uQ1yHuhUybw=",
+  "dgSpecHash": "WDuyeinbEmA=",
   "success": true,
   "projectFilePath": "C:\\Users\\rehab.hegazy\\source\\repos\\FactoryLicence\\PdfExtractorRazor\\PdfExtractorRazor.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\rehab.hegazy\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512",
     "C:\\Users\\rehab.hegazy\\.nuget\\packages\\pdfpig\\0.1.9\\pdfpig.0.1.9.nupkg.sha512"
   ],
   "logs": []

@@ -46,13 +46,16 @@ namespace PdfExtractorRazor.Models
             public string AcceptanceCriteria { get; set; } = string.Empty;
         }
 
-        public class ExtractionResult
-        {
-            public List<CalibrationCertificate> Certificates { get; set; } = new();
-            public List<string> Errors { get; set; } = new();
-            public int ProcessedFiles { get; set; }
-            public bool HasResults => Certificates.Any();
-            public string JsonOutput { get; set; } = string.Empty;
-        }
-   
+    public class ExtractionResult
+    {
+        public List<CalibrationCertificate> Certificates { get; set; } = new();
+        public List<string> Errors { get; set; } = new();
+        public int ProcessedFiles { get; set; }
+        public bool HasResults => Certificates.Any();
+        public string JsonOutput { get; set; } = string.Empty;
+        public string? SavedFilePath { get; set; }
+        public string? SavedFileName => !string.IsNullOrEmpty(SavedFilePath) ? Path.GetFileName(SavedFilePath) : null;
+        public string? DownloadUrl => !string.IsNullOrEmpty(SavedFilePath) ? $"/exports/{Path.GetFileName(SavedFilePath)}" : null;
+    }
+
 }

@@ -19,70 +19,73 @@ using UglyToad.PdfPig;
 namespace PdfExtractorRazor.Pages; 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Hosting;
 using PdfExtractorRazor.Models;
 using PdfExtractorRazor.Services;
 
 public class IndexModel : PageModel
+{
+    private readonly IPdfExtractionService _extractionService;
+    private readonly ILogger<IndexModel> _logger;
+
+    public IndexModel(IPdfExtractionService extractionService, ILogger<IndexModel> logger)
     {
-        private readonly IPdfExtractionService _extractionService;
-        private readonly ILogger<IndexModel> _logger;
+        _extractionService = extractionService;
+        _logger = logger;
+    }
 
-        public IndexModel(IPdfExtractionService extractionService, ILogger<IndexModel> logger)
+    [BindProperty]
+    public IFormFileCollection UploadedFiles { get; set; } = default!;
+
+    public ExtractionResult? ExtractionResult { get; set; }
+
+    public void OnGet()
+    {
+    }
+
+    public async Task<IActionResult> OnPostAsync()
+    {
+        if (UploadedFiles == null || UploadedFiles.Count == 0)
         {
-            _extractionService = extractionService;
-            _logger = logger;
+            ModelState.AddModelError("UploadedFiles", "Please select at least one PDF file.");
+            return Page();
         }
 
-        [BindProperty]
-        public IFormFileCollection UploadedFiles { get; set; } = default!;
-
-        public ExtractionResult? ExtractionResult { get; set; }
-
-        public void OnGet()
+        try
         {
+            ExtractionResult = await _extractionService.ExtractFromFilesAsync(UploadedFiles);
+
+            if (ExtractionResult.HasResults)
+            {
+                _logger.LogInformation("Successfully processed {Count} certificates and saved to {FilePath}",
+                    ExtractionResult.Certificates.Count, ExtractionResult.SavedFilePath);
+
+                TempData["SuccessMessage"] = $"Successfully extracted {ExtractionResult.Certificates.Count} certificates and saved to {ExtractionResult.SavedFileName}";
+            }
+
+            return Page();
         }
-
-        public async Task<IActionResult> OnPostAsync()
+        catch (Exception ex)
         {
-            if (UploadedFiles == null || UploadedFiles.Count == 0)
-            {
-                ModelState.AddModelError("UploadedFiles", "Please select at least one PDF file.");
-                return Page();
-            }
-
-            try
-            {
-                ExtractionResult = await _extractionService.ExtractFromFilesAsync(UploadedFiles);
-
-                if (ExtractionResult.HasResults)
-                {
-                    _logger.LogInformation("Successfully processed {Count} certificates", ExtractionResult.Certificates.Count);
-                }
-
-                return Page();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing uploaded files");
-                ModelState.AddModelError("", "An error occurred while processing the files.");
-                return Page();
-            }
-        }
-
-        public IActionResult OnPostDownloadJson()
-        {
-            var jsonData = Request.Form["jsonData"];
-            if (string.IsNullOrEmpty(jsonData))
-            {
-                return BadRequest("No JSON data available");
-            }
-
-            var bytes = System.Text.Encoding.UTF8.GetBytes(jsonData);
-            var fileName = $"calibration_certificates_{DateTime.Now:yyyyMMdd_HHmmss}.json";
-
-            return File(bytes, "application/json", fileName);
+            _logger.LogError(ex, "Error processing uploaded files");
+            ModelState.AddModelError("", "An error occurred while processing the files.");
+            return Page();
         }
     }
 
+    public IActionResult OnPostDownloadJson()
+    {
+        var jsonData = Request.Form["jsonData"];
+        if (string.IsNullOrEmpty(jsonData))
+        {
+            return BadRequest("No JSON data available");
+        }
 
- 
+        var bytes = System.Text.Encoding.UTF8.GetBytes(jsonData);
+        var fileName = $"calibration_certificates_{DateTime.Now:yyyyMMdd_HHmmss}.json";
+
+        return File(bytes, "application/json", fileName);
+    }
+}
+
+

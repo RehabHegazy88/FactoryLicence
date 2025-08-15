@@ -37,3 +37,5 @@ C:\Users\rehab.hegazy\source\repos\FactoryLicence\PdfExtractorRazor\obj\Debug\ne
 C:\Users\rehab.hegazy\source\repos\FactoryLicence\PdfExtractorRazor\obj\Debug\net8.0\PdfExtractorRazor.pdb
 C:\Users\rehab.hegazy\source\repos\FactoryLicence\PdfExtractorRazor\obj\Debug\net8.0\PdfExtractorRazor.genruntimeconfig.cache
 C:\Users\rehab.hegazy\source\repos\FactoryLicence\PdfExtractorRazor\obj\Debug\net8.0\ref\PdfExtractorRazor.dll
+C:\Users\rehab.hegazy\source\repos\FactoryLicence\PdfExtractorRazor\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Users\rehab.hegazy\source\repos\FactoryLicence\PdfExtractorRazor\bin\Debug\net8.0\Exports\calibration_certificates.json

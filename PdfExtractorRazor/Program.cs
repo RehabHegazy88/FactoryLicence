@@ -8,6 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 
 builder.Services.AddScoped<IPdfExtractionService, PdfExtractionService>();
+
+//builder.WebHost.UseWebRoot("wwwroot");              // sets WebRootPath
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -26,7 +28,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.MapRazorPages();
+app.MapRazorPages(); 
+
 
 app.Run();
 
