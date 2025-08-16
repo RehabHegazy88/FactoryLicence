@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PdfExtractorRazor")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+07445ad436be5d586488a78f1edfa01d59ddd97e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2c255d28ea97e457a5fde62a309c69b1d64681d0")]
 [assembly: System.Reflection.AssemblyProductAttribute("PdfExtractorRazor")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PdfExtractorRazor")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

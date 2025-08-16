@@ -1,0 +1,343 @@
+﻿@page
+@using PdfExtractorRazor.Models
+@model PdfExtractorRazor.Pages.CalibrationReportsModel
+@{
+    ViewData["Title"] = "Calibration Reports";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+            .stat-card h3 {
+                margin: 0 0 10px 0;
+                font-size: 1.2em;
+            }
+
+            .stat-card .value {
+                font-size: 2em;
+                font-weight: bold;
+            }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+            .btn:hover {
+                transform: scale(1.05);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                color: white;
+            }
+
+            .btn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+        }
+
+        .pass {
+            color: green;
+            font-weight: bold;
+        }
+
+        .fail {
+            color: red;
+            font-weight: bold;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        @@media print {
+            body
+
+        {
+            background: white;
+            margin: 0;
+        }
+
+        .container {
+            box-shadow: none;
+            padding: 10px;
+        }
+
+        .button-group, .no-print {
+            display: none !important;
+        }
+
+        table {
+            font-size: 12px;
+        }
+
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Calibration Certificates Data Compilation</h1>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage) || !string.IsNullOrEmpty(TempData["ErrorMessage"]?.ToString()))
+        {
+            <div class="alert alert-error">
+                <strong>Error:</strong> @(Model.ErrorMessage ?? TempData["ErrorMessage"])
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage) || !string.IsNullOrEmpty(TempData["SuccessMessage"]?.ToString()))
+        {
+            <div class="alert alert-success">
+                <strong>Success:</strong> @(Model.SuccessMessage ?? TempData["SuccessMessage"])
+            </div>
+        }
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Certificates</h3>
+                <div class="value">@(Model.Statistics?.TotalCertificates ?? 0)</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pressure Gauges</h3>
+                <div class="value">@(Model.Statistics?.PressureGauges ?? 0)</div>
+            </div>
+            <div class="stat-card">
+                <h3>Relief Valves</h3>
+                <div class="value">@(Model.Statistics?.ReliefValves ?? 0)</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pass Rate</h3>
+                <div class="value">@(Model.Statistics?.PassRate ?? 0)%</div>
+            </div>
+        </div>
+
+        <div class="button-group no-print">
+            <form method="post" asp-page-handler="LoadAll" style="display: inline;">
+                <button type="submit" class="btn">🔄 Refresh Data</button>
+            </form>
+            <a href="?handler=DownloadExcel" class="btn">📊 Download Excel</a>
+            <button onclick="window.print()" class="btn">🖨️ Print Table</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Certificate No</th>
+                        <th>Equipment Type</th>
+                        <th>Serial No</th>
+                        <th>Manufacturer</th>
+                        <th>Model No</th>
+                        <th>Range</th>
+                        <th>Units</th>
+                        <th>Accuracy Grade</th>
+                        <th>Calibration Date</th>
+                        <th>Next Cal Date</th>
+                        <th>Max Deviation</th>
+                        <th>Status</th>
+                        <th>Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.AllCertificates != null && Model.AllCertificates.Any())
+                    {
+                        @foreach (var cert in Model.AllCertificates)
+                        {
+                            <tr>
+                                <td>@(cert.CertificateNo ?? "")</td>
+                                <td>@(cert.EquipmentType ?? "")</td>
+                                <td>@(cert.SerialNo ?? "")</td>
+                                <td>@(cert.Manufacturer ?? "")</td>
+                                <td>@(cert.ModelNo ?? "")</td>
+                                <td>@(cert.Range ?? "")</td>
+                                <td>@(cert.Units ?? "")</td>
+                                <td>@(cert.AccuracyGrade ?? "")</td>
+                                <td>@(cert.CalibrationDate ?? "")</td>
+                                <td>@(cert.NextCalDate ?? "")</td>
+                                <td>@(cert.MaxDeviation ?? "")</td>
+                                <td class="@(cert.Status == "PASS" ? "pass" : "fail")">@(cert.Status ?? "")</td>
+                                <td>@(cert.Location ?? "")</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="13" class="no-data">
+                                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                                {
+                                    <text>Error loading data. Please check the logs.</text>
+                                }
+                                else
+                                {
+                                    <text>No certificate data available. Click "Refresh Data" to load JSON files.</text>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.AllCertificates != null && Model.AllCertificates.Any())
+        {
+            <div style="margin-top: 20px; text-align: center; color: #666;">
+                <small>
+                    Showing @Model.AllCertificates.Count certificates |
+                    Last updated: @DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                </small>
+            </div>
+        }
+    </div>
+
+    <script>
+        // Simple client-side functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-hide alerts after 5 seconds
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    setTimeout(() => {
+                        if (alert.parentNode) {
+                            alert.parentNode.removeChild(alert);
+                        }
+                    }, 300);
+                }, 5000);
+            });
+
+            // Add loading state to forms
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function() {
+                    const button = form.querySelector('button[type="submit"]');
+                    if (button) {
+                        button.disabled = true;
+                        button.textContent = 'Loading...';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

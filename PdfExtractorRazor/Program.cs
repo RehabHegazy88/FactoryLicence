@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
 
-builder.Services.AddScoped<IPdfExtractionService, PdfExtractionService>();
+builder.Services.AddScoped<IPdfExtractionService, CompletePdfExtractionService>();
 
 //builder.WebHost.UseWebRoot("wwwroot");              // sets WebRootPath
 var app = builder.Build();
